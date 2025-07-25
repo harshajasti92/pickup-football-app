@@ -10,9 +10,9 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 
 if __name__ == "__main__":
-    # Run the FastAPI application
+    # Run the FastAPI application (modular version)
     uvicorn.run(
-        "app.main:app",
+        "app.main_modular:app",
         host="0.0.0.0",
         port=8000,
         reload=True,  # Enable auto-reload for development
