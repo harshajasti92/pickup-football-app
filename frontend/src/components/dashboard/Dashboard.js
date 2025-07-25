@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { getUserDisplayName } from '../../utils/auth';
 import GameCard from './GameCard';
+import CreateGameForm from './CreateGameForm';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -9,10 +10,11 @@ const Dashboard = () => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     fetchGames();
-  }, [user]); // Re-fetch when user changes
+  }, [user]); // Re-fetch when user changes // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchGames = async () => {
     try {
@@ -120,6 +122,20 @@ const Dashboard = () => {
     logout();
   };
 
+  const handleCreateGame = () => {
+    setShowCreateForm(true);
+  };
+
+  const handleCloseCreateForm = () => {
+    setShowCreateForm(false);
+  };
+
+  const handleGameCreated = (newGame) => {
+    // Add the new game to the beginning of the games list
+    setGames(prevGames => [newGame, ...prevGames]);
+    alert(`Game "${newGame.title}" created successfully!`);
+  };
+
   return (
     <div className="dashboard">
       {/* Header Section - Placeholder */}
@@ -161,9 +177,14 @@ const Dashboard = () => {
             <div className="games-card">
               <div className="games-header">
                 <h2>⚽ Available Games</h2>
-                <button className="refresh-btn" onClick={fetchGames}>
-                  🔄 Refresh
-                </button>
+                <div className="games-header-actions">
+                  <button className="create-game-btn-header" onClick={handleCreateGame}>
+                    + Create Game
+                  </button>
+                  <button className="refresh-btn" onClick={fetchGames}>
+                    🔄 Refresh
+                  </button>
+                </div>
               </div>
               
               {loading && (
@@ -189,7 +210,7 @@ const Dashboard = () => {
                   <div className="empty-icon">🏈</div>
                   <h3>No games available</h3>
                   <p>Be the first to create a game!</p>
-                  <button className="create-game-btn">
+                  <button className="create-game-btn" onClick={handleCreateGame}>
                     + Create New Game
                   </button>
                 </div>
@@ -216,6 +237,15 @@ const Dashboard = () => {
 
         </div>
       </main>
+
+      {/* Create Game Form Modal */}
+      {showCreateForm && (
+        <CreateGameForm
+          onClose={handleCloseCreateForm}
+          onGameCreated={handleGameCreated}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 };

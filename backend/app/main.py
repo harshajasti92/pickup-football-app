@@ -168,6 +168,50 @@ class JoinGameRequest(BaseModel):
             raise ValueError('Invalid position preference')
         return v
 
+class CreateGameRequest(BaseModel):
+    title: str
+    description: Optional[str] = None
+    location: str
+    date_time: str  # ISO format datetime string
+    duration_minutes: int = 90
+    max_players: int = 22
+    skill_level_min: int = 1
+    skill_level_max: int = 10
+    
+    @validator('title')
+    def validate_title(cls, v):
+        if not v or len(v.strip()) < 3:
+            raise ValueError('Title must be at least 3 characters long')
+        if len(v.strip()) > 100:
+            raise ValueError('Title must be less than 100 characters')
+        return v.strip()
+    
+    @validator('location')
+    def validate_location(cls, v):
+        if not v or len(v.strip()) < 3:
+            raise ValueError('Location must be at least 3 characters long')
+        if len(v.strip()) > 200:
+            raise ValueError('Location must be less than 200 characters')
+        return v.strip()
+    
+    @validator('duration_minutes')
+    def validate_duration(cls, v):
+        if v < 30 or v > 180:
+            raise ValueError('Duration must be between 30 and 180 minutes')
+        return v
+    
+    @validator('max_players')
+    def validate_max_players(cls, v):
+        if v < 4 or v > 30:
+            raise ValueError('Max players must be between 4 and 30')
+        return v
+    
+    @validator('skill_level_min', 'skill_level_max')
+    def validate_skill_levels(cls, v):
+        if v < 1 or v > 10:
+            raise ValueError('Skill level must be between 1 and 10')
+        return v
+
 class GameParticipantsResponse(BaseModel):
     game_id: int
     confirmed: List[ParticipantResponse]
@@ -350,6 +394,82 @@ async def get_user(user_id: int):
             created_at=str(user['created_at'])
         )
         
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.post("/api/games", response_model=GameResponse)
+async def create_game(game_data: CreateGameRequest, created_by: int):
+    """Create a new game"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Verify the creator exists and is active
+        cursor.execute("""
+            SELECT id, first_name, last_name FROM users 
+            WHERE id = %s AND is_active = true
+        """, (created_by,))
+        creator = cursor.fetchone()
+        
+        if not creator:
+            raise HTTPException(status_code=404, detail="Creator user not found or inactive")
+        
+        # Validate skill level range
+        if game_data.skill_level_min > game_data.skill_level_max:
+            raise HTTPException(status_code=400, detail="Minimum skill level cannot be higher than maximum")
+        
+        # Parse and validate datetime
+        from datetime import datetime
+        try:
+            datetime.fromisoformat(game_data.date_time.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid datetime format. Use ISO format (e.g., 2024-01-01T18:00:00Z)")
+        
+        # Insert the new game
+        cursor.execute("""
+            INSERT INTO games (
+                title, description, location, date_time, duration_minutes,
+                max_players, skill_level_min, skill_level_max, created_by
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, title, description, location, date_time, duration_minutes,
+                     max_players, skill_level_min, skill_level_max, status,
+                     created_by, created_at, updated_at
+        """, (
+            game_data.title, game_data.description, game_data.location,
+            game_data.date_time, game_data.duration_minutes, game_data.max_players,
+            game_data.skill_level_min, game_data.skill_level_max, created_by
+        ))
+        
+        new_game = cursor.fetchone()
+        conn.commit()
+        
+        return GameResponse(
+            id=new_game['id'],
+            title=new_game['title'],
+            description=new_game['description'],
+            location=new_game['location'],
+            date_time=str(new_game['date_time']),
+            duration_minutes=new_game['duration_minutes'],
+            max_players=new_game['max_players'],
+            skill_level_min=new_game['skill_level_min'],
+            skill_level_max=new_game['skill_level_max'],
+            status=new_game['status'],
+            created_by=new_game['created_by'],
+            creator_name=f"{creator['first_name']} {creator['last_name']}",
+            created_at=str(new_game['created_at']),
+            updated_at=str(new_game['updated_at']),
+            confirmed_players=0,
+            waitlisted_players=0,
+            user_status=None,
+            user_waitlist_position=None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create game: {str(e)}")
     finally:
         cursor.close()
         conn.close()
