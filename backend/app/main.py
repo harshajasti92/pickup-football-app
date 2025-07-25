@@ -97,6 +97,22 @@ class UserSignup(BaseModel):
             raise ValueError('Invalid playing style')
         return v
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+    @validator('username')
+    def validate_username(cls, v):
+        if not v.strip():
+            raise ValueError('Username is required')
+        return v.strip()
+
+    @validator('password')
+    def validate_password(cls, v):
+        if not v:
+            raise ValueError('Password is required')
+        return v
+
 class UserResponse(BaseModel):
     id: int
     username: str
@@ -125,6 +141,63 @@ def verify_password(password: str, hashed: str) -> bool:
 async def root():
     """Health check endpoint"""
     return {"message": "Pickup Football API is running!", "version": "1.0.0"}
+
+@app.post("/api/users/login", response_model=UserResponse)
+async def login_user(login_data: UserLogin):
+    """Authenticate user login"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Get user by username
+        cursor.execute("""
+            SELECT id, username, password_hash, first_name, last_name, 
+                   age_range, bio, skill_level, preferred_position, playing_style, 
+                   is_active, is_verified, created_at
+            FROM users 
+            WHERE username = %s AND is_active = true
+        """, (login_data.username,))
+        
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Verify password
+        if not verify_password(login_data.password, user['password_hash']):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        # Update last login timestamp
+        cursor.execute("""
+            UPDATE users 
+            SET last_login = CURRENT_TIMESTAMP 
+            WHERE id = %s
+        """, (user['id'],))
+        conn.commit()
+        
+        return UserResponse(
+            id=user['id'],
+            username=user['username'],
+            first_name=user['first_name'],
+            last_name=user['last_name'],
+            age_range=user['age_range'],
+            bio=user['bio'],
+            skill_level=user['skill_level'],
+            preferred_position=user['preferred_position'],
+            playing_style=user['playing_style'],
+            is_active=user['is_active'],
+            is_verified=user['is_verified'],
+            created_at=str(user['created_at'])
+        )
+        
+    except HTTPException:
+        # Re-raise HTTPExceptions (401 errors)
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.post("/api/users/signup", response_model=UserResponse)
 async def signup_user(user_data: UserSignup):
