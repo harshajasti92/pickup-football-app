@@ -1,7 +1,7 @@
 import React from 'react';
 import './GameCard.css';
 
-const GameCard = ({ game, onJoinGame, currentUser }) => {
+const GameCard = ({ game, onJoinGame, onLeaveGame, currentUser }) => {
   const formatDateTime = (dateTimeStr) => {
     const date = new Date(dateTimeStr);
     return {
@@ -86,13 +86,31 @@ const GameCard = ({ game, onJoinGame, currentUser }) => {
           
           <div className="detail-item">
             <span className="detail-icon">👥</span>
-            <span className="detail-text">Max {game.max_players} players</span>
+            <span className="detail-text">
+              {game.confirmed_players || 0}/{game.max_players} players
+              {game.waitlisted_players > 0 && ` (+${game.waitlisted_players} waitlisted)`}
+            </span>
           </div>
           
           <div className="detail-item">
             <span className="detail-icon">👤</span>
             <span className="detail-text">Created by {game.creator_name}</span>
           </div>
+
+          {/* Show user's participation status */}
+          {game.user_status && (
+            <div className="detail-item">
+              <span className="detail-icon">
+                {game.user_status === 'confirmed' ? '✅' : 
+                 game.user_status === 'waitlisted' ? '⏳' : '❌'}
+              </span>
+              <span className="detail-text">
+                You are {game.user_status}
+                {game.user_status === 'waitlisted' && game.user_waitlist_position && 
+                  ` (#${game.user_waitlist_position} in queue)`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -100,6 +118,15 @@ const GameCard = ({ game, onJoinGame, currentUser }) => {
         {game.created_by === currentUser?.id ? (
           <button className="game-btn owner-btn" disabled>
             Your Game
+          </button>
+        ) : game.user_status ? (
+          // User is already participating - show leave button
+          <button 
+            className="game-btn leave-btn"
+            onClick={() => onLeaveGame && onLeaveGame(game)}
+            style={{ backgroundColor: '#ff6b6b', color: 'white' }}
+          >
+            Leave Game ({game.user_status}) 🚪
           </button>
         ) : canJoinGame() ? (
           <button 

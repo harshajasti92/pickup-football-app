@@ -12,12 +12,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchGames();
-  }, []);
+  }, [user]); // Re-fetch when user changes
 
   const fetchGames = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/games');
+      
+      // Include user_id in the request to get participation status
+      const url = user?.id 
+        ? `http://localhost:8000/api/games?user_id=${user.id}`
+        : 'http://localhost:8000/api/games';
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to fetch games');
@@ -34,9 +40,80 @@ const Dashboard = () => {
     }
   };
 
+  const handleLeaveGame = async (game) => {
+    if (!user?.id) {
+      alert('Please log in to leave games');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to leave "${game.title}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/games/${game.id}/leave?user_id=${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to leave game');
+      }
+
+      const result = await response.json();
+      alert(result.message);
+      
+      // Refresh games list to show updated participant counts
+      fetchGames();
+      
+    } catch (error) {
+      console.error('Error leaving game:', error);
+      alert(`Failed to leave game: ${error.message}`);
+    }
+  };
+
   const handleJoinGame = async (game) => {
-    // TODO: Implement join game functionality
-    alert(`Joining game: ${game.title}\nThis feature will be implemented next!`);
+    if (!user?.id) {
+      alert('Please log in to join games');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/games/${game.id}/join?user_id=${user.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          position_preference: null // Could be enhanced with a position selector
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to join game');
+      }
+
+      const result = await response.json();
+      
+      // Show success message
+      let message = result.message;
+      if (result.status === 'waitlisted' && result.waitlist_position) {
+        message += `\nYou are #${result.waitlist_position} on the waitlist.`;
+      }
+      
+      alert(message);
+      
+      // Refresh games list to show updated participant counts
+      fetchGames();
+      
+    } catch (error) {
+      console.error('Error joining game:', error);
+      alert(`Failed to join game: ${error.message}`);
+    }
   };
 
   const handleLogout = () => {
@@ -129,6 +206,7 @@ const Dashboard = () => {
                       game={game}
                       currentUser={user}
                       onJoinGame={handleJoinGame}
+                      onLeaveGame={handleLeaveGame}
                     />
                   ))}
                 </div>

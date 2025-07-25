@@ -44,7 +44,7 @@ def add_sample_games():
                 'location': 'Central Park Field A',
                 'date_time': base_date + timedelta(days=1, hours=18),
                 'duration_minutes': 90,
-                'max_players': 20,
+                'max_players': 3,  # Reduced for waitlist testing
                 'skill_level_min': 5,
                 'skill_level_max': 8,
                 'created_by': users[0][0],  # John (skill 8)

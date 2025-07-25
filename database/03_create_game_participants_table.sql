@@ -18,11 +18,28 @@ CREATE INDEX IF NOT EXISTS idx_game_participants_status ON game_participants(sta
 CREATE INDEX IF NOT EXISTS idx_game_participants_joined_at ON game_participants(joined_at);
 
 -- Add constraints and checks
-ALTER TABLE game_participants ADD CONSTRAINT IF NOT EXISTS check_participant_status 
-    CHECK (status IN ('confirmed', 'waitlisted', 'declined'));
-
-ALTER TABLE game_participants ADD CONSTRAINT IF NOT EXISTS check_position_preference 
-    CHECK (position_preference IN ('Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Any') OR position_preference IS NULL);
+DO $$ 
+BEGIN
+    -- Add participant status constraint
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'game_participants' 
+        AND constraint_name = 'check_participant_status'
+    ) THEN
+        ALTER TABLE game_participants ADD CONSTRAINT check_participant_status 
+            CHECK (status IN ('confirmed', 'waitlisted', 'declined'));
+    END IF;
+    
+    -- Add position preference constraint
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name = 'game_participants' 
+        AND constraint_name = 'check_position_preference'
+    ) THEN
+        ALTER TABLE game_participants ADD CONSTRAINT check_position_preference 
+            CHECK (position_preference IN ('Goalkeeper', 'Defender', 'Midfielder', 'Forward', 'Any') OR position_preference IS NULL);
+    END IF;
+END $$;
 
 -- Add comments for documentation
 COMMENT ON TABLE game_participants IS 'Junction table tracking user participation in games';
