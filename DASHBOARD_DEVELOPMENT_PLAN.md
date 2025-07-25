@@ -96,10 +96,10 @@ CREATE TABLE user_preferences (
 ```
 
 **Backend API Extensions:**
-- [ ] `/api/games` - CRUD operations for games
-- [ ] `/api/games/{id}/join` - Join game endpoint
-- [ ] `/api/games/{id}/leave` - Leave game endpoint  
-- [ ] `/api/users/{id}/games` - User's games (past, upcoming)
+- [x] `/api/games` - CRUD operations for games
+- [x] `/api/games/{id}/join` - Join game endpoint
+- [x] `/api/games/{id}/leave` - Leave game endpoint  
+- [x] `/api/users/{id}/games` - User's games (past, upcoming)
 - [ ] `/api/users/{id}/preferences` - User preferences CRUD
 
 ---
@@ -381,20 +381,20 @@ const gameData = {
 ### 4.4 Games Section Development Tasks
 
 **Phase 4A - Basic Games Display (Week 4):**
-- [ ] Create games database schema
-- [ ] Build basic GameCard component with static data
-- [ ] Implement games list container
-- [ ] Create empty state for no games
-- [ ] Add loading states and skeletons
-- [ ] Set up games API endpoints (GET /api/games)
+- [x] Create games database schema
+- [x] Build basic GameCard component with static data
+- [x] Implement games list container
+- [x] Create empty state for no games
+- [x] Add loading states and skeletons
+- [x] Set up games API endpoints (GET /api/games)
 
 **Phase 4B - User Participation (Week 5):**
-- [ ] Implement game join/leave functionality
-- [ ] Build waitlist management system
-- [ ] Add user participation status display
+- [x] Implement game join/leave functionality
+- [x] Build waitlist management system
+- [x] Add user participation status display
 - [ ] Create game filtering by user's skill level
-- [ ] Implement real-time player count updates
-- [ ] Add game status change handling
+- [x] Implement real-time player count updates
+- [x] Add game status change handling
 
 **Phase 4C - Enhanced Features (Week 6):**
 - [ ] Location-based game discovery
