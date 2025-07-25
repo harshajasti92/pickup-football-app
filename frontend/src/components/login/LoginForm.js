@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import './LoginForm.css';
 
 const LoginForm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -72,10 +77,12 @@ const LoginForm = () => {
       const userData = await response.json();
       console.log('Login successful:', userData);
       
-      // Store user data (you might want to use a proper state management solution later)
-      localStorage.setItem('userData', JSON.stringify(userData));
+      // Use auth context to login user
+      login(userData);
       
-      alert(`Welcome back, ${userData.first_name}!`);
+      // Redirect to dashboard or the page they were trying to access
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
       
       // Reset form
       setFormData({

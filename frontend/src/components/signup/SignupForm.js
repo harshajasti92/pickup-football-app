@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import './SignupForm.css';
 
 const SignupForm = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -112,7 +114,10 @@ const SignupForm = () => {
       const newUser = await response.json();
       console.log('User created successfully:', newUser);
       
-      alert(`Signup successful! Welcome to Pickup Football, ${newUser.first_name}! You can now log in with your credentials.`);
+      alert(`Signup successful! Welcome to Pickup Football, ${newUser.first_name}!`);
+      
+      // Auto-login the user after successful signup
+      login(newUser);
       
       // Reset form
       setFormData({
@@ -128,8 +133,8 @@ const SignupForm = () => {
         playingStyle: ''
       });
 
-      // Redirect to login page after successful signup
-      navigate('/login');
+      // Redirect to dashboard after successful signup
+      navigate('/dashboard');
 
     } catch (error) {
       console.error('Signup error:', error);

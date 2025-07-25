@@ -9,7 +9,7 @@ import os
 # Database connection configuration
 DB_CONFIG = {
     "host": "127.0.0.1",
-    "database": "postgres",
+    "database": "pickup_football",
     "user": "postgres", 
     "password": "kingdoms",
     "port": 5432
@@ -24,7 +24,7 @@ def create_users_table():
         cursor = conn.cursor()
         
         # Read the SQL file
-        sql_file_path = "../database/01_create_users_table.sql"
+        sql_file_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "database", "01_create_users_table.sql")
         
         if not os.path.exists(sql_file_path):
             print(f"❌ SQL file not found: {sql_file_path}")

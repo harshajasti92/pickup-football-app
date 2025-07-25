@@ -4,7 +4,7 @@ from pydantic import BaseModel, validator
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import bcrypt
-from typing import Optional
+from typing import Optional, List
 import os
 import getpass
 
@@ -31,7 +31,7 @@ def get_db_password():
 
 DB_CONFIG = {
     "host": "127.0.0.1",  # Use IPv4 explicitly
-    "database": os.getenv("POSTGRES_DATABASE", "postgres"),
+    "database": os.getenv("POSTGRES_DATABASE", "pickup_football"),
     "user": os.getenv("POSTGRES_USER", "postgres"),
     "password": get_db_password(),
     "port": int(os.getenv("POSTGRES_PORT", "5432"))
@@ -126,6 +126,22 @@ class UserResponse(BaseModel):
     is_active: bool
     is_verified: bool
     created_at: str
+
+class GameResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    location: str
+    date_time: str
+    duration_minutes: int
+    max_players: int
+    skill_level_min: int
+    skill_level_max: int
+    status: str
+    created_by: int
+    creator_name: str
+    created_at: str
+    updated_at: str
 
 def hash_password(password: str) -> str:
     """Hash password using bcrypt"""
@@ -302,6 +318,80 @@ async def get_user(user_id: int):
             created_at=str(user['created_at'])
         )
         
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.get("/api/games", response_model=List[GameResponse])
+async def get_games(
+    status: Optional[str] = "open",
+    skill_min: Optional[int] = None,
+    skill_max: Optional[int] = None,
+    limit: Optional[int] = 20
+):
+    """Get list of available games"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # Build query with optional filters
+        query = """
+            SELECT g.id, g.title, g.description, g.location, g.date_time,
+                   g.duration_minutes, g.max_players, g.skill_level_min, g.skill_level_max,
+                   g.status, g.created_by, g.created_at, g.updated_at,
+                   u.first_name, u.last_name
+            FROM games g
+            JOIN users u ON g.created_by = u.id
+        """
+        
+        conditions = []
+        params = []
+        
+        if status:
+            conditions.append("g.status = %s")
+            params.append(status)
+        
+        if skill_min is not None:
+            conditions.append("g.skill_level_max >= %s")
+            params.append(skill_min)
+            
+        if skill_max is not None:
+            conditions.append("g.skill_level_min <= %s")
+            params.append(skill_max)
+        
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        
+        query += " ORDER BY g.date_time ASC"
+        
+        if limit:
+            query += f" LIMIT {limit}"
+        
+        cursor.execute(query, params)
+        games = cursor.fetchall()
+        
+        return [
+            GameResponse(
+                id=game['id'],
+                title=game['title'],
+                description=game['description'],
+                location=game['location'],
+                date_time=str(game['date_time']),
+                duration_minutes=game['duration_minutes'],
+                max_players=game['max_players'],
+                skill_level_min=game['skill_level_min'],
+                skill_level_max=game['skill_level_max'],
+                status=game['status'],
+                created_by=game['created_by'],
+                creator_name=f"{game['first_name']} {game['last_name']}",
+                created_at=str(game['created_at']),
+                updated_at=str(game['updated_at'])
+            )
+            for game in games
+        ]
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch games: {str(e)}")
     finally:
         cursor.close()
         conn.close()

@@ -10,7 +10,7 @@ import os
 # Database connection configuration
 DB_CONFIG = {
     "host": "127.0.0.1",
-    "database": "postgres",
+    "database": "pickup_football",
     "user": "postgres", 
     "password": "kingdoms",
     "port": 5432
