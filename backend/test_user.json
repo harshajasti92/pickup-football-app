@@ -1,0 +1,11 @@
+{
+  "username": "testuser",
+  "password": "testpass123",
+  "first_name": "Test",
+  "last_name": "User",
+  "age_range": "26-35",
+  "bio": "Test user for API testing",
+  "skill_level": 7,
+  "preferred_position": "Midfielder",
+  "playing_style": "Technical"
+}
