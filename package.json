@@ -1,0 +1,28 @@
+{
+  "name": "pickup-football-app",
+  "version": "1.0.0",
+  "description": "Pickup Football App - Full Stack Application",
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\" --names \"backend,frontend\" --prefix name --kill-others",
+    "dev": "npm start",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && C:/Users/harsh/Pickup-Football/.venv/Scripts/python.exe run.py",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && C:/Users/harsh/Pickup-Football/.venv/Scripts/python.exe -m pip install -r requirements.txt",
+    "install:all": "npm run install:frontend && npm run install:backend",
+    "build": "cd frontend && npm run build",
+    "test": "cd frontend && npm test"
+  },
+  "keywords": [
+    "football",
+    "pickup",
+    "react",
+    "fastapi",
+    "postgresql"
+  ],
+  "author": "harshajasti92",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

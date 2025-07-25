@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './SignupForm.css';
 
 const SignupForm = () => {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -109,7 +112,7 @@ const SignupForm = () => {
       const newUser = await response.json();
       console.log('User created successfully:', newUser);
       
-      alert(`Signup successful! Welcome to Pickup Football, ${newUser.first_name}!`);
+      alert(`Signup successful! Welcome to Pickup Football, ${newUser.first_name}! You can now log in with your credentials.`);
       
       // Reset form
       setFormData({
@@ -124,6 +127,9 @@ const SignupForm = () => {
         preferredPosition: '',
         playingStyle: ''
       });
+
+      // Redirect to login page after successful signup
+      navigate('/login');
 
     } catch (error) {
       console.error('Signup error:', error);
@@ -313,6 +319,15 @@ const SignupForm = () => {
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
+
+        <div className="form-footer">
+          <p>Already have an account? <Link 
+              to="/login" 
+              className="login-link"
+            >
+              Sign in here
+            </Link></p>
+        </div>
       </div>
     </div>
   );
